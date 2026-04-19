@@ -39,22 +39,19 @@ ORGANIZZE_USER_AGENT=Seu Nome (seu_email@exemplo.com)
 
 ## Running with Docker
 
-Build the image:
+The image is published on Docker Hub as [`rafaelsdev90/organizze-mcp-unofficial`](https://hub.docker.com/r/rafaelsdev90/organizze-mcp-unofficial).
 
-```bash
-docker build -t organizze-mcp .
-```
-
-Run passing the credentials as environment variables:
+### docker run
 
 ```bash
 docker run -d \
   --name organizze-mcp \
+  --restart unless-stopped \
   -p 3000:3000 \
   -e ORGANIZZE_EMAIL=seu_email@exemplo.com \
   -e ORGANIZZE_API_TOKEN=seu_token_aqui \
   -e ORGANIZZE_USER_AGENT="Seu Nome (seu_email@exemplo.com)" \
-  organizze-mcp
+  rafaelsdev90/organizze-mcp-unofficial:latest
 ```
 
 Or using a `.env` file:
@@ -62,10 +59,39 @@ Or using a `.env` file:
 ```bash
 docker run -d \
   --name organizze-mcp \
+  --restart unless-stopped \
   -p 3000:3000 \
   --env-file .env \
-  organizze-mcp
+  rafaelsdev90/organizze-mcp-unofficial:latest
 ```
+
+To use a specific version instead of `latest`, replace the tag, e.g. `rafaelsdev90/organizze-mcp-unofficial:0.0.1`.
+
+### docker-compose / Portainer
+
+Create a `docker-compose.yml` file:
+
+```yaml
+services:
+  organizze-mcp:
+    image: rafaelsdev90/organizze-mcp-unofficial:latest
+    container_name: organizze-mcp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      ORGANIZZE_EMAIL: seu_email@exemplo.com
+      ORGANIZZE_API_TOKEN: seu_token_aqui
+      ORGANIZZE_USER_AGENT: "Seu Nome (seu_email@exemplo.com)"
+```
+
+Then start it:
+
+```bash
+docker compose up -d
+```
+
+**Portainer:** paste the `docker-compose.yml` content into a new Stack (`Stacks → Add stack → Web editor`), fill in your credentials, and click *Deploy the stack*.
 
 The server will be available at `http://<server-ip>:3000/mcp`.
 
