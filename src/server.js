@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { version } from '../package.json';
+import pkg from '../package.json' with { type: 'json' };
+const { version } = pkg;
 
 export function createServer(requestFn) {
   const server = new McpServer({
