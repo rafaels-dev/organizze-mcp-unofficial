@@ -1,0 +1,36 @@
+{
+  "name": "organizze-mcp-unofficial",
+  "version": "0.0.1",
+  "description": "Unofficial MCP server for the Organizze personal finance API — bank accounts, credit cards, invoices, transactions, transfers, categories, and budgets.",
+  "keywords": [
+    "mcp",
+    "organizze",
+    "finance",
+    "personal-finance"
+  ],
+  "homepage": "https://github.com/rafaels-dev/organizze-mcp",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "organizze-mcp": "src/index.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.2.1",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.4"
+  }
+}
