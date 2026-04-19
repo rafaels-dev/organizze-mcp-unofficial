@@ -1,0 +1,53 @@
+name: Publish Docker image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: Build and push to Docker Hub
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check if version tag already exists on Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          IMAGE="${DOCKERHUB_USERNAME}/organizze-mcp-unofficial"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://hub.docker.com/v2/repositories/${IMAGE}/tags/${VERSION}/")
+
+          if [ "$STATUS" = "200" ]; then
+            echo "::error::Version ${VERSION} already exists on Docker Hub. Bump the version in package.json before publishing."
+            exit 1
+          fi
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/organizze-mcp-unofficial:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/organizze-mcp-unofficial:${{ steps.pkg.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
