@@ -51,3 +51,11 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/organizze-mcp-unofficial:${{ steps.pkg.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Tag commit on GitHub
+        env:
+          VERSION: ${{ steps.pkg.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"
