@@ -1,6 +1,6 @@
 {
   "name": "organizze-mcp-unofficial",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha",
   "description": "Unofficial MCP server for the Organizze personal finance API — bank accounts, credit cards, invoices, transactions, transfers, categories, and budgets.",
   "keywords": [
     "mcp",
