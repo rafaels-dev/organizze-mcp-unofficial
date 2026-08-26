@@ -71,9 +71,9 @@ node src/index.js
 node src/index.js --host 0.0.0.0 --port 8080
 ```
 
-## Running with Docker (HTTP)
+## Running with Docker
 
-The image is published on Docker Hub as [`rafaelsdev90/organizze-mcp-unofficial`](https://hub.docker.com/r/rafaelsdev90/organizze-mcp-unofficial). It runs in HTTP mode.
+The image is published on Docker Hub as [`rafaelsdev90/organizze-mcp-unofficial`](https://hub.docker.com/r/rafaelsdev90/organizze-mcp-unofficial).
 
 ### docker run
 
@@ -99,7 +99,7 @@ docker run -d \
   rafaelsdev90/organizze-mcp-unofficial:latest
 ```
 
-To use a specific version instead of `latest`, replace the tag, e.g. `rafaelsdev90/organizze-mcp-unofficial:0.0.1`.
+To use a specific version instead of `latest`, replace the tag, e.g. `rafaelsdev90/organizze-mcp-unofficial:0.1.1`.
 
 ### docker-compose / Portainer
 
@@ -148,7 +148,7 @@ Or in `settings.json`:
 }
 ```
 
-In HTTP mode the server reads credentials from its own environment (or `.env`) at startup, so there's no need to pass them in the client config.
+The server reads credentials from its own environment (or `.env`) at startup, so there's no need to pass them in the client config.
 
 ## Available tools
 

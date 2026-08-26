@@ -14,13 +14,25 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
 
       - name: Read version from package.json
         id: pkg
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Check if version tag already exists on Docker Hub
+        id: check
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           VERSION: ${{ steps.pkg.outputs.version }}
@@ -30,11 +42,14 @@ jobs:
             "https://hub.docker.com/v2/repositories/${IMAGE}/tags/${VERSION}/")
 
           if [ "$STATUS" = "200" ]; then
-            echo "::error::Version ${VERSION} already exists on Docker Hub. Bump the version in package.json before publishing."
-            exit 1
+            echo "::notice::Version ${VERSION} is already on Docker Hub, skipping publish. Bump the version in package.json to release."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Tag commit on GitHub
+        if: steps.check.outputs.publish == 'true'
         env:
           VERSION: ${{ steps.pkg.outputs.version }}
         run: |
@@ -42,17 +57,20 @@ jobs:
           git push origin "v${VERSION}"
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        if: steps.check.outputs.publish == 'true'
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        if: steps.check.outputs.publish == 'true'
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v6
+        if: steps.check.outputs.publish == 'true'
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
