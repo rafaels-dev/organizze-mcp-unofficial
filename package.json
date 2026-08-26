@@ -1,20 +1,25 @@
 {
   "name": "organizze-mcp-unofficial",
-  "version": "0.0.1-alpha-2",
-  "description": "Unofficial MCP server for the Organizze personal finance API — bank accounts, credit cards, invoices, transactions, transfers, categories, and budgets.",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Companion MCP server (HTTP) for the Organizze personal finance API — only the endpoints the official Organizze MCP does not cover (transfer editing, archiving, entities, users, recurrence occurrences).",
   "keywords": [
     "mcp",
     "organizze",
     "finance",
     "personal-finance"
   ],
-  "homepage": "https://github.com/rafaels-dev/organizze-mcp",
+  "homepage": "https://github.com/rafaels-dev/organizze-mcp-unofficial",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafaels-dev/organizze-mcp-unofficial.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rafaels-dev/organizze-mcp-unofficial/issues"
+  },
   "license": "MIT",
   "type": "module",
   "main": "src/index.js",
-  "bin": {
-    "organizze-mcp": "src/index.js"
-  },
   "engines": {
     "node": ">=22.0.0"
   },

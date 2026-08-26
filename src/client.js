@@ -2,18 +2,32 @@ import 'dotenv/config';
 
 const BASE_URL = 'https://api.organizze.com.br/rest/v2';
 
-function getCredentials() {
-  const email = process.env.ORGANIZZE_EMAIL;
-  const token = process.env.ORGANIZZE_API_TOKEN;
-  const userAgent = process.env.ORGANIZZE_USER_AGENT;
+const CREDENTIAL_VARS = ['ORGANIZZE_EMAIL', 'ORGANIZZE_API_TOKEN', 'ORGANIZZE_USER_AGENT'];
 
-  if (!email || !token || !userAgent) {
+/**
+ * Returns the names of the credential variables that are not set, so callers
+ * can warn early instead of failing only on the first API call.
+ *
+ * @returns {string[]}
+ */
+export function missingCredentials() {
+  return CREDENTIAL_VARS.filter((name) => !process.env[name]);
+}
+
+function getCredentials() {
+  const missing = missingCredentials();
+
+  if (missing.length > 0) {
     throw new Error(
-      'Missing credentials: set ORGANIZZE_EMAIL, ORGANIZZE_API_TOKEN, and ORGANIZZE_USER_AGENT environment variables.'
+      `Missing credentials: set ${CREDENTIAL_VARS.join(', ')} environment variables (missing: ${missing.join(', ')}).`
     );
   }
 
-  return { email, token, userAgent };
+  return {
+    email: process.env.ORGANIZZE_EMAIL,
+    token: process.env.ORGANIZZE_API_TOKEN,
+    userAgent: process.env.ORGANIZZE_USER_AGENT,
+  };
 }
 
 export async function request(path, { method = 'GET', body } = {}) {

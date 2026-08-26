@@ -1,6 +1,8 @@
 # organizze-mcp
 
-MCP server for the [Organizze](https://www.organizze.com.br/) personal finance API — bank accounts, credit cards, invoices, transactions, transfers, categories, and budgets.
+Companion MCP server for the [Organizze](https://www.organizze.com.br/) personal finance REST API.
+
+Organizze now ships an [official MCP server](https://developers.organizze.com.br/) (`https://mcp.organizze.com.br/mcp`, OAuth) with a comprehensive tool set — use that for day-to-day finance work. This project deliberately does **not** duplicate it: it only exposes the REST API v2 endpoints the official MCP does not cover (editing/deleting transfers, archiving accounts and cards, entities, users, recurrence occurrences, category colors). Connect both side by side, or use this one standalone where an API-key/self-hosted server fits better than OAuth.
 
 > ⚠️ **DISCLAIMER:** This is an unofficial integration. Use at your own risk.
 
@@ -9,21 +11,42 @@ MCP server for the [Organizze](https://www.organizze.com.br/) personal finance A
 - Node.js ≥ 22 (LTS recommended)
 - An Organizze account with an API token
 
-## Setup
+## Get your API token
 
-### 1. Get your API token
+Go to [Organizze API settings](https://app.organizze.com.br/configuracoes/api-keys) and generate a token. You'll need three values:
 
-Go to [Organizze API settings](https://app.organizze.com.br/configuracoes/api-keys) and generate a token.
+| Variable | Description |
+|---|---|
+| `ORGANIZZE_EMAIL` | The e-mail of your Organizze account |
+| `ORGANIZZE_API_TOKEN` | The token generated above |
+| `ORGANIZZE_USER_AGENT` | Identification required by the API, e.g. `Your Name (you@example.com)` |
 
-### 2. Clone and install
+## How it runs
 
-```bash
-git clone https://github.com/rafaels-dev/organizze-mcp
-cd organizze-mcp
-npm install
+The server runs as a long-running **Streamable HTTP** endpoint on `/mcp` — the same model as the published Docker image. There is no stdio mode and no npm package to install: run it with Docker (recommended) or straight from a clone, then point your MCP client at the URL.
+
+> Note: the old `organizze-mcp-unofficial` npm package (stdio) is no longer published or maintained. Existing installs keep working with the old tool set, but new versions ship via Docker/HTTP only.
+
+## CLI options
+
+```
+--host <host>          Host to bind (default: 127.0.0.1)
+-p, --port <port>      Port to bind (default: 3000)
+-h, --help             Show help
+-v, --version          Show the version
 ```
 
-### 3. Configure credentials
+Environment equivalents: `HOST` and `PORT`. Command line flags take precedence.
+
+Credentials come from environment variables, or from a `.env` file in the current working directory.
+
+## Running from a clone
+
+```bash
+git clone https://github.com/rafaels-dev/organizze-mcp-unofficial
+cd organizze-mcp-unofficial
+npm install
+```
 
 Copy `.env.example` to `.env` and fill in your credentials:
 
@@ -37,9 +60,20 @@ ORGANIZZE_API_TOKEN=seu_token_aqui
 ORGANIZZE_USER_AGENT=Seu Nome (seu_email@exemplo.com)
 ```
 
-## Running with Docker
+Then start the server:
 
-The image is published on Docker Hub as [`rafaelsdev90/organizze-mcp-unofficial`](https://hub.docker.com/r/rafaelsdev90/organizze-mcp-unofficial).
+```bash
+node src/index.js
+# organizze-mcp listening on http://127.0.0.1:3000/mcp
+```
+
+```bash
+node src/index.js --host 0.0.0.0 --port 8080
+```
+
+## Running with Docker (HTTP)
+
+The image is published on Docker Hub as [`rafaelsdev90/organizze-mcp-unofficial`](https://hub.docker.com/r/rafaelsdev90/organizze-mcp-unofficial). It runs in HTTP mode.
 
 ### docker run
 
@@ -95,42 +129,13 @@ docker compose up -d
 
 The server will be available at `http://<server-ip>:3000/mcp`.
 
-## Running the server (local)
-
-```bash
-node src/index.js
-# organizze-mcp listening on http://127.0.0.1:3000/mcp
-```
-
-You can override the port and host via environment variables:
-
-```bash
-PORT=8080 HOST=0.0.0.0 node src/index.js
-```
-
-## Configure in Claude Code
-
-First start the server, then register it using the CLI or by editing the settings file manually.
-
-### Via CLI
+### Connecting a client to the HTTP server
 
 ```bash
 claude mcp add --transport http organizze http://127.0.0.1:3000/mcp
 ```
 
-To add it to a specific scope:
-
-```bash
-# Project-level (saves to .claude/settings.json)
-claude mcp add --transport http --scope project organizze http://127.0.0.1:3000/mcp
-
-# User-level (saves to ~/.claude/settings.json)
-claude mcp add --transport http --scope user organizze http://127.0.0.1:3000/mcp
-```
-
-### Via settings.json
-
-Add to `~/.claude/settings.json` (user-level) or `.claude/settings.json` (project-level):
+Or in `settings.json`:
 
 ```json
 {
@@ -143,49 +148,29 @@ Add to `~/.claude/settings.json` (user-level) or `.claude/settings.json` (projec
 }
 ```
 
-The server reads credentials from the `.env` file (or environment variables) at startup, so there's no need to pass them in the Claude Code config.
+In HTTP mode the server reads credentials from its own environment (or `.env`) at startup, so there's no need to pass them in the client config.
 
 ## Available tools
 
-| Tool | Description |
-|---|---|
-| `get_user` | Get user details |
-| `list_accounts` | List bank accounts |
-| `get_account` | Get a bank account |
-| `create_account` | Create a bank account |
-| `update_account` | Update a bank account |
-| `delete_account` | Delete a bank account |
-| `list_categories` | List categories |
-| `get_category` | Get a category |
-| `create_category` | Create a category |
-| `update_category` | Update a category |
-| `delete_category` | Delete a category |
-| `list_credit_cards` | List credit cards |
-| `get_credit_card` | Get a credit card |
-| `create_credit_card` | Create a credit card |
-| `update_credit_card` | Update a credit card |
-| `delete_credit_card` | Delete a credit card |
-| `list_invoices` | List credit card invoices |
-| `get_invoice` | Get invoice details (with transactions and payments) |
-| `get_invoice_payments` | Get payments for an invoice |
-| `list_budgets` | List budgets (current month, by year, or by month) |
-| `list_transactions` | List transactions with optional date/account filters |
-| `get_transaction` | Get a transaction |
-| `create_transaction` | Create a transaction (simple, recurring, or installment) |
-| `update_transaction` | Update a transaction |
-| `delete_transaction` | Delete a transaction |
-| `list_transfers` | List transfers |
-| `get_transfer` | Get a transfer |
-| `create_transfer` | Create a transfer between bank accounts |
-| `update_transfer` | Update a transfer |
-| `delete_transfer` | Delete a transfer |
+Every tool here covers a gap in the official Organizze MCP — nothing overlaps with it.
+
+| Tool | Description | Gap it fills |
+|---|---|---|
+| `update_transfer` | Update a transfer between bank accounts | Official MCP can only create/list transfers |
+| `delete_transfer` | Delete a transfer | Official MCP can only create/list transfers |
+| `archive_account` | Archive a bank account | Archiving is not exposed officially |
+| `unarchive_account` | Restore an archived bank account | Archiving is not exposed officially |
+| `archive_credit_card` | Archive a credit card | Archiving is not exposed officially |
+| `unarchive_credit_card` | Restore an archived credit card | Archiving is not exposed officially |
+| `list_entities` | List financial entities (spaces) | Official MCP is locked to a single entity |
+| `get_entity` | Get an entity (plan, license, owner) | Official MCP is locked to a single entity |
+| `list_users` | List users of the current entity | No user tools officially |
+| `get_user` | Get user details | No user tools officially |
+| `list_transaction_occurrences` | List all occurrences of a recurring/installment series | Not exposed officially |
+| `list_category_colors` | List valid hex colors for categories | Not exposed officially |
 
 ## Important notes
 
-- **Monetary values** are always in cents (`amount_cents`). Example: R$ 150,00 = `15000`.
+- **Monetary values** are in cents (`amount_cents`). Example: R$ 150,00 = `15000`.
 - **Dates** use the format `YYYY-MM-DD`.
-- **Credit card transactions:** always use `credit_card_id` (not `account_id`) to post to a credit card. Using `account_id` for a credit card account redirects to the default bank account.
-- **Negative amounts** = expenses/debits; **positive amounts** = income/credits.
-- **Recurring transactions:** use `recurrence_attributes` with a `periodicity` value.
-- **Installment transactions:** use `installments_attributes` with `periodicity` and `total`.
-- **Periodicity values:** `monthly`, `yearly`, `weekly`, `biweekly`, `bimonthly`, `trimonthly`.
+- **IDs** come from the Organizze API. When using this server alongside the official MCP, get transfer/account/card IDs from its list tools (e.g. `list_transferences`, `list_accounts`).
