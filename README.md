@@ -158,6 +158,10 @@ Every tool here covers a gap in the official Organizze MCP — nothing overlaps 
 |---|---|---|
 | `update_transaction_advanced` | Update a transaction via the raw REST API (all fields) | Official `update_transaction` has no `credit_card_invoice_id` (can't move a purchase to another invoice), can't move between cards/accounts, and its `update_recurrence: this_and_future` is a no-op on installment series |
 | `delete_transaction_advanced` | Delete a transaction, optionally with future/all occurrences | Official `delete_recurrence: this_and_future` does not remove future installments |
+| `move_transactions` | Move a batch of transactions to another card/invoice/account | Official `mass_update_transactions` cannot change account, card, or invoice |
+| `list_transactions_raw` | List transactions straight from the REST API | Official `list_transactions` (all_transactions mode) omits invoice-payment entries |
+| `find_credit_card_invoice` | Resolve a "YYYY-MM" month to the full invoice object(s) | Official `get_credit_card_invoice` ignores its date parameter; `invoice_date_or_id` "YYYY-MM" mis-parses |
+| `get_credit_card_invoice_raw` | Get one invoice with embedded transactions from the REST API | Ground truth when official invoice aggregates are stale; check `paid` before registering a payment |
 | `update_transfer` | Update a transfer between bank accounts | Official MCP can only create/list transfers |
 | `delete_transfer` | Delete a transfer | Official MCP can only create/list transfers |
 | `archive_account` | Archive a bank account | Archiving is not exposed officially |

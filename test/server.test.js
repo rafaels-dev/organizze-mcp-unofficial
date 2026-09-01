@@ -30,12 +30,16 @@ describe('Tool surface', () => {
         'archive_credit_card',
         'delete_transaction_advanced',
         'delete_transfer',
+        'find_credit_card_invoice',
+        'get_credit_card_invoice_raw',
         'get_entity',
         'get_user',
         'list_category_colors',
         'list_entities',
         'list_transaction_occurrences',
+        'list_transactions_raw',
         'list_users',
+        'move_transactions',
         'unarchive_account',
         'unarchive_credit_card',
         'update_transaction_advanced',
@@ -98,6 +102,99 @@ describe('Transactions', () => {
       method: 'DELETE',
       body: { update_future: true },
     });
+  });
+
+  it('move_transactions PUTs each transaction and reports per-id results', async () => {
+    req
+      .mockResolvedValueOnce({ id: 1 })
+      .mockRejectedValueOnce(new Error('Organizze API error 404: not found'))
+      .mockResolvedValueOnce({ id: 3 });
+    const result = await client.callTool({
+      name: 'move_transactions',
+      arguments: { transaction_ids: [1, 2, 3], credit_card_invoice_id: 320 },
+    });
+    expect(req).toHaveBeenCalledTimes(3);
+    expect(req).toHaveBeenNthCalledWith(2, '/transactions/2', {
+      method: 'PUT',
+      body: { credit_card_invoice_id: 320 },
+    });
+    const summary = parseResult(result);
+    expect(summary.moved).toBe(2);
+    expect(summary.failed).toBe(1);
+    expect(summary.results[1]).toEqual({
+      id: 2,
+      ok: false,
+      error: 'Organizze API error 404: not found',
+    });
+  });
+
+  it('move_transactions refuses a call with no target field', async () => {
+    const result = await client.callTool({
+      name: 'move_transactions',
+      arguments: { transaction_ids: [1] },
+    });
+    expect(req).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+  });
+
+  it('list_transactions_raw forwards dates and account filter as query string', async () => {
+    req.mockResolvedValue([{ id: 1 }]);
+    await client.callTool({
+      name: 'list_transactions_raw',
+      arguments: { start_date: '2026-07-12', end_date: '2026-08-31', account_id: 5 },
+    });
+    expect(req).toHaveBeenCalledWith(
+      '/transactions?start_date=2026-07-12&end_date=2026-08-31&account_id=5'
+    );
+  });
+
+  it('list_transactions_raw with no params calls the bare endpoint', async () => {
+    req.mockResolvedValue([]);
+    await client.callTool({ name: 'list_transactions_raw', arguments: {} });
+    expect(req).toHaveBeenCalledWith('/transactions');
+  });
+});
+
+describe('Invoices', () => {
+  let req, client;
+
+  beforeEach(async () => {
+    req = vi.fn();
+    client = await buildClient(req);
+  });
+
+  it('find_credit_card_invoice filters the invoice list by month', async () => {
+    req.mockResolvedValue([
+      { id: 318, date: '2026-07-16' },
+      { id: 319, date: '2026-08-16' },
+      { id: 320, date: '2026-09-16' },
+    ]);
+    const result = await client.callTool({
+      name: 'find_credit_card_invoice',
+      arguments: { credit_card_id: 9, month: '2026-08' },
+    });
+    expect(req).toHaveBeenCalledWith('/credit_cards/9/invoices');
+    expect(parseResult(result)).toEqual([{ id: 319, date: '2026-08-16' }]);
+  });
+
+  it('find_credit_card_invoice lists available invoices when the month has none', async () => {
+    req.mockResolvedValue([{ id: 318, date: '2026-07-16' }]);
+    const result = await client.callTool({
+      name: 'find_credit_card_invoice',
+      arguments: { credit_card_id: 9, month: '2026-01' },
+    });
+    expect(textResult(result)).toContain('No invoice found for 2026-01');
+    expect(textResult(result)).toContain('2026-07-16');
+  });
+
+  it('get_credit_card_invoice_raw calls GET /credit_cards/:id/invoices/:invoice_id', async () => {
+    req.mockResolvedValue({ id: 319, paid: true, transactions: [{ id: 1 }] });
+    const result = await client.callTool({
+      name: 'get_credit_card_invoice_raw',
+      arguments: { credit_card_id: 9, invoice_id: 319 },
+    });
+    expect(req).toHaveBeenCalledWith('/credit_cards/9/invoices/319');
+    expect(parseResult(result)).toEqual({ id: 319, paid: true, transactions: [{ id: 1 }] });
   });
 });
 

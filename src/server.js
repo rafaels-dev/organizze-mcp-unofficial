@@ -82,6 +82,116 @@ export function createServer(requestFn) {
     }
   );
 
+  server.tool(
+    'move_transactions',
+    'Move a batch of transactions to another credit card, credit card invoice, or bank account in one call — one PUT per transaction against the raw REST API. The official mass_update_transactions cannot change account/card/invoice. Returns a per-transaction result; failures do not stop the batch.',
+    {
+      transaction_ids: z
+        .array(z.number().int())
+        .min(1)
+        .max(200)
+        .describe('Transaction IDs to move (max 200 per call)'),
+      account_id: z.number().int().optional().describe('Move to this bank account ID'),
+      credit_card_id: z.number().int().optional().describe('Move to this credit card ID'),
+      credit_card_invoice_id: z
+        .number()
+        .int()
+        .optional()
+        .describe('Reallocate to this invoice ID (from find_credit_card_invoice)'),
+    },
+    async ({ transaction_ids, ...body }) => {
+      if (Object.keys(body).length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Nothing to do: pass at least one of account_id, credit_card_id, credit_card_invoice_id.',
+            },
+          ],
+          isError: true,
+        };
+      }
+      const results = [];
+      for (const id of transaction_ids) {
+        try {
+          await requestFn(`/transactions/${id}`, { method: 'PUT', body });
+          results.push({ id, ok: true });
+        } catch (error) {
+          results.push({ id, ok: false, error: error.message });
+        }
+      }
+      const moved = results.filter((r) => r.ok).length;
+      const summary = { moved, failed: results.length - moved, results };
+      return { content: [{ type: 'text', text: JSON.stringify(summary, null, 2) }] };
+    }
+  );
+
+  // ─── Raw listings and invoice lookups ────────────────────────────────────────
+  // The official list_transactions omits CreditCardBillsPayment entries (invoice
+  // payments) in all_transactions mode, its get_credit_card_invoice ignores the
+  // date parameter, and invoice aggregate totals can be stale. These tools go
+  // straight to the REST API so reconciliations see the ground truth.
+
+  server.tool(
+    'list_transactions_raw',
+    'List transactions straight from the REST API (GET /transactions), unfiltered — includes invoice-payment entries (CreditCardBillsPayment) that the official list_transactions omits in all_transactions mode. Defaults to the current month when no dates are given.',
+    {
+      start_date: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+      end_date: z.string().optional().describe('End date (YYYY-MM-DD)'),
+      account_id: z.number().int().optional().describe('Filter by bank account ID'),
+      page: z.number().int().min(1).optional().describe('Page number'),
+    },
+    async (params) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).map(([k, v]) => [k, String(v)])
+      ).toString();
+      const data = await requestFn(`/transactions${qs ? `?${qs}` : ''}`);
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'find_credit_card_invoice',
+    'Find a credit card invoice by month ("YYYY-MM") and return the full invoice object(s), including the numeric invoice ID needed by update_transaction_advanced / move_transactions. Works around the official get_credit_card_invoice, which ignores its date parameter and only returns the current invoice.',
+    {
+      credit_card_id: z.number().int().describe('Credit card ID'),
+      month: z
+        .string()
+        .regex(/^\d{4}-\d{2}$/)
+        .describe('Invoice month (YYYY-MM)'),
+    },
+    async ({ credit_card_id, month }) => {
+      const invoices = await requestFn(`/credit_cards/${credit_card_id}/invoices`);
+      const all = Array.isArray(invoices) ? invoices : [];
+      const matches = all.filter((inv) => typeof inv?.date === 'string' && inv.date.startsWith(month));
+      if (matches.length === 0) {
+        const available = all.map((inv) => ({ id: inv?.id, date: inv?.date }));
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `No invoice found for ${month} on credit card ${credit_card_id}. Available invoices: ${JSON.stringify(available)}`,
+            },
+          ],
+        };
+      }
+      return { content: [{ type: 'text', text: JSON.stringify(matches, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'get_credit_card_invoice_raw',
+    'Get one credit card invoice straight from the REST API (GET /credit_cards/:id/invoices/:invoice_id), including its embedded transactions — the ground truth when the official invoice totals look stale or inconsistent with listings. Also use it to check whether an invoice is already paid BEFORE registering a payment (registering a payment on a paid invoice silently creates a reversal).',
+    {
+      credit_card_id: z.number().int().describe('Credit card ID'),
+      invoice_id: z.number().int().describe('Invoice ID (from find_credit_card_invoice)'),
+    },
+    async ({ credit_card_id, invoice_id }) => {
+      const data = await requestFn(`/credit_cards/${credit_card_id}/invoices/${invoice_id}`);
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
   // ─── Transfers (official MCP can only create and list) ──────────────────────
 
   server.tool(
