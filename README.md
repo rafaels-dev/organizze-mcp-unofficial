@@ -2,7 +2,7 @@
 
 Companion MCP server for the [Organizze](https://www.organizze.com.br/) personal finance REST API.
 
-Organizze now ships an [official MCP server](https://developers.organizze.com.br/) (`https://mcp.organizze.com.br/mcp`, OAuth) with a comprehensive tool set — use that for day-to-day finance work. This project deliberately does **not** duplicate it: it only exposes the REST API v2 endpoints the official MCP does not cover (editing/deleting transfers, archiving accounts and cards, entities, users, recurrence occurrences, category colors). Connect both side by side, or use this one standalone where an API-key/self-hosted server fits better than OAuth.
+Organizze now ships an [official MCP server](https://developers.organizze.com.br/) (`https://mcp.organizze.com.br/mcp`, OAuth) with a comprehensive tool set — use that for day-to-day finance work. This project deliberately does **not** duplicate it: it only exposes the REST API v2 endpoints and fields the official MCP does not cover (raw transaction updates that can reallocate invoices and edit installment series, editing/deleting transfers, archiving accounts and cards, entities, users, recurrence occurrences, category colors). Connect both side by side, or use this one standalone where an API-key/self-hosted server fits better than OAuth.
 
 > ⚠️ **DISCLAIMER:** This is an unofficial integration. Use at your own risk.
 
@@ -156,6 +156,12 @@ Every tool here covers a gap in the official Organizze MCP — nothing overlaps 
 
 | Tool | Description | Gap it fills |
 |---|---|---|
+| `update_transaction_advanced` | Update a transaction via the raw REST API (all fields) | Official `update_transaction` has no `credit_card_invoice_id` (can't move a purchase to another invoice), can't move between cards/accounts, and its `update_recurrence: this_and_future` is a no-op on installment series |
+| `delete_transaction_advanced` | Delete a transaction, optionally with future/all occurrences | Official `delete_recurrence: this_and_future` does not remove future installments |
+| `move_transactions` | Move a batch of transactions to another card/invoice/account | Official `mass_update_transactions` cannot change account, card, or invoice |
+| `list_transactions_raw` | List transactions straight from the REST API | Official `list_transactions` (all_transactions mode) omits invoice-payment entries |
+| `find_credit_card_invoice` | Resolve a "YYYY-MM" month to the full invoice object(s) | Official `get_credit_card_invoice` ignores its date parameter; `invoice_date_or_id` "YYYY-MM" mis-parses |
+| `get_credit_card_invoice_raw` | Get one invoice with embedded transactions from the REST API | Ground truth when official invoice aggregates are stale; check `paid` before registering a payment |
 | `update_transfer` | Update a transfer between bank accounts | Official MCP can only create/list transfers |
 | `delete_transfer` | Delete a transfer | Official MCP can only create/list transfers |
 | `archive_account` | Archive a bank account | Archiving is not exposed officially |
