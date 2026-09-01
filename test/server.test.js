@@ -219,6 +219,18 @@ describe('Transfers', () => {
     expect(parseResult(result)).toEqual({ id: 7, amount_cents: 5000 });
   });
 
+  it('update_transfer forwards credit/debit account ids', async () => {
+    req.mockResolvedValue({ id: 7 });
+    await client.callTool({
+      name: 'update_transfer',
+      arguments: { transfer_id: 7, credit_account_id: 1, debit_account_id: 2 },
+    });
+    expect(req).toHaveBeenCalledWith('/transfers/7', {
+      method: 'PUT',
+      body: { credit_account_id: 1, debit_account_id: 2 },
+    });
+  });
+
   it('delete_transfer calls DELETE /transfers/:id and returns success text', async () => {
     req.mockResolvedValue(null);
     const result = await client.callTool({

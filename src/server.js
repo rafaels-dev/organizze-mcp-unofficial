@@ -28,7 +28,7 @@ export function createServer(requestFn) {
 
   server.tool(
     'update_transaction_advanced',
-    'Update a transaction via the raw REST API. Use the official update_transaction for ordinary edits; use this one for what it cannot do: move a card purchase to another invoice (credit_card_invoice_id), move a transaction to another card or account (credit_card_id / account_id), or apply a change to future occurrences of an installment series (update_future). Get IDs from the official list/get tools or from list_transaction_occurrences.',
+    'Update a transaction via the raw REST API. Use the official update_transaction for ordinary edits; use this one for what it cannot do: move a card purchase to another invoice (credit_card_invoice_id), move a transaction to another card or account (credit_card_id / account_id), or apply a change to future occurrences of an installment series (update_future). Get IDs from the official list/get tools or from list_transaction_occurrences. Note: the REST docs mark description, date and amount_cents as required on PUT — if a partial update fails or blanks fields, fetch the transaction first and resend its current values along with the change.',
     {
       transaction_id: z.number().int().describe('Transaction ID'),
       description: z.string().optional().describe('Transaction description'),
@@ -202,6 +202,16 @@ export function createServer(requestFn) {
       description: z.string().optional().describe('Transfer description'),
       date: z.string().optional().describe('Date (YYYY-MM-DD)'),
       amount_cents: z.number().int().positive().optional().describe('Amount in cents'),
+      credit_account_id: z
+        .number()
+        .int()
+        .optional()
+        .describe('SOURCE account ID — the account the money leaves (REST v2 naming)'),
+      debit_account_id: z
+        .number()
+        .int()
+        .optional()
+        .describe('DESTINATION account ID — the account the money enters (REST v2 naming)'),
       paid: z.boolean().optional().describe('Whether the transfer is settled'),
       notes: z.string().optional().describe('Notes'),
       tags: z.array(z.object({ name: z.string() })).optional().describe('Tags'),
