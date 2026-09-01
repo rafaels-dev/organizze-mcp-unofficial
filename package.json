@@ -1,8 +1,8 @@
 {
   "name": "organizze-mcp-unofficial",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
-  "description": "Companion MCP server (HTTP) for the Organizze personal finance API — only the endpoints the official Organizze MCP does not cover (transfer editing, archiving, entities, users, recurrence occurrences).",
+  "description": "Companion MCP server (HTTP) for the Organizze personal finance API — only the endpoints the official Organizze MCP does not cover (raw transaction update/delete with invoice reallocation, transfer editing, archiving, entities, users, recurrence occurrences).",
   "keywords": [
     "mcp",
     "organizze",

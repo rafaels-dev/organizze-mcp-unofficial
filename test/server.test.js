@@ -28,6 +28,7 @@ describe('Tool surface', () => {
       [
         'archive_account',
         'archive_credit_card',
+        'delete_transaction_advanced',
         'delete_transfer',
         'get_entity',
         'get_user',
@@ -37,9 +38,66 @@ describe('Tool surface', () => {
         'list_users',
         'unarchive_account',
         'unarchive_credit_card',
+        'update_transaction_advanced',
         'update_transfer',
       ].sort()
     );
+  });
+});
+
+describe('Transactions', () => {
+  let req, client;
+
+  beforeEach(async () => {
+    req = vi.fn();
+    client = await buildClient(req);
+  });
+
+  it('update_transaction_advanced calls PUT /transactions/:id with credit_card_invoice_id', async () => {
+    req.mockResolvedValue({ id: 3229120849, credit_card_invoice_id: 320 });
+    const result = await client.callTool({
+      name: 'update_transaction_advanced',
+      arguments: { transaction_id: 3229120849, credit_card_invoice_id: 320, date: '2026-08-11' },
+    });
+    expect(req).toHaveBeenCalledWith('/transactions/3229120849', {
+      method: 'PUT',
+      body: { credit_card_invoice_id: 320, date: '2026-08-11' },
+    });
+    expect(parseResult(result)).toEqual({ id: 3229120849, credit_card_invoice_id: 320 });
+  });
+
+  it('update_transaction_advanced forwards update_future for installment series', async () => {
+    req.mockResolvedValue({ id: 10 });
+    await client.callTool({
+      name: 'update_transaction_advanced',
+      arguments: { transaction_id: 10, credit_card_id: 4, update_future: true },
+    });
+    expect(req).toHaveBeenCalledWith('/transactions/10', {
+      method: 'PUT',
+      body: { credit_card_id: 4, update_future: true },
+    });
+  });
+
+  it('delete_transaction_advanced calls DELETE /transactions/:id without body by default', async () => {
+    req.mockResolvedValue(null);
+    const result = await client.callTool({
+      name: 'delete_transaction_advanced',
+      arguments: { transaction_id: 10 },
+    });
+    expect(req).toHaveBeenCalledWith('/transactions/10', { method: 'DELETE' });
+    expect(textResult(result)).toBe('Transaction deleted successfully.');
+  });
+
+  it('delete_transaction_advanced forwards update_future to delete a whole series tail', async () => {
+    req.mockResolvedValue(null);
+    await client.callTool({
+      name: 'delete_transaction_advanced',
+      arguments: { transaction_id: 10, update_future: true },
+    });
+    expect(req).toHaveBeenCalledWith('/transactions/10', {
+      method: 'DELETE',
+      body: { update_future: true },
+    });
   });
 });
 

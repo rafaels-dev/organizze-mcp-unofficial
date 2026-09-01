@@ -2,7 +2,7 @@
 
 Companion MCP server for the [Organizze](https://www.organizze.com.br/) personal finance REST API.
 
-Organizze now ships an [official MCP server](https://developers.organizze.com.br/) (`https://mcp.organizze.com.br/mcp`, OAuth) with a comprehensive tool set — use that for day-to-day finance work. This project deliberately does **not** duplicate it: it only exposes the REST API v2 endpoints the official MCP does not cover (editing/deleting transfers, archiving accounts and cards, entities, users, recurrence occurrences, category colors). Connect both side by side, or use this one standalone where an API-key/self-hosted server fits better than OAuth.
+Organizze now ships an [official MCP server](https://developers.organizze.com.br/) (`https://mcp.organizze.com.br/mcp`, OAuth) with a comprehensive tool set — use that for day-to-day finance work. This project deliberately does **not** duplicate it: it only exposes the REST API v2 endpoints and fields the official MCP does not cover (raw transaction updates that can reallocate invoices and edit installment series, editing/deleting transfers, archiving accounts and cards, entities, users, recurrence occurrences, category colors). Connect both side by side, or use this one standalone where an API-key/self-hosted server fits better than OAuth.
 
 > ⚠️ **DISCLAIMER:** This is an unofficial integration. Use at your own risk.
 
@@ -156,6 +156,8 @@ Every tool here covers a gap in the official Organizze MCP — nothing overlaps 
 
 | Tool | Description | Gap it fills |
 |---|---|---|
+| `update_transaction_advanced` | Update a transaction via the raw REST API (all fields) | Official `update_transaction` has no `credit_card_invoice_id` (can't move a purchase to another invoice), can't move between cards/accounts, and its `update_recurrence: this_and_future` is a no-op on installment series |
+| `delete_transaction_advanced` | Delete a transaction, optionally with future/all occurrences | Official `delete_recurrence: this_and_future` does not remove future installments |
 | `update_transfer` | Update a transfer between bank accounts | Official MCP can only create/list transfers |
 | `delete_transfer` | Delete a transfer | Official MCP can only create/list transfers |
 | `archive_account` | Archive a bank account | Archiving is not exposed officially |
