@@ -2,7 +2,7 @@
 
 Companion MCP server for the [Organizze](https://www.organizze.com.br/) personal finance REST API.
 
-Organizze now ships an [official MCP server](https://developers.organizze.com.br/) (`https://mcp.organizze.com.br/mcp`, OAuth) with a comprehensive tool set — use that for day-to-day finance work. This project deliberately does **not** duplicate it: it only exposes the REST API v2 endpoints and fields the official MCP does not cover (raw transaction updates that can reallocate invoices and edit installment series, editing/deleting transfers, archiving accounts and cards, entities, users, recurrence occurrences, category colors). Connect both side by side, or use this one standalone where an API-key/self-hosted server fits better than OAuth.
+Organizze now ships an [official MCP server](https://developers.organizze.com.br/) (`https://mcp.organizze.com.br/mcp`, OAuth) with a comprehensive tool set — use that for day-to-day finance work. This project deliberately does **not** duplicate it: it only exposes the REST API v2 endpoints and fields the official MCP does not cover (raw transaction updates/deletes that can reallocate invoices and edit installment series, batch moves between cards/invoices/accounts, raw transaction and invoice lookups, editing/deleting transfers, archiving accounts and cards, entities, users, recurrence occurrences, category colors). Connect both side by side, or use this one standalone where an API-key/self-hosted server fits better than OAuth.
 
 > ⚠️ **DISCLAIMER:** This is an unofficial integration. Use at your own risk.
 
@@ -99,7 +99,7 @@ docker run -d \
   rafaelsdev90/organizze-mcp-unofficial:latest
 ```
 
-To use a specific version instead of `latest`, replace the tag, e.g. `rafaelsdev90/organizze-mcp-unofficial:0.1.1`.
+To use a specific version instead of `latest`, replace the tag, e.g. `rafaelsdev90/organizze-mcp-unofficial:0.2.0`.
 
 ### docker-compose / Portainer
 
@@ -177,6 +177,6 @@ Every tool here covers a gap in the official Organizze MCP — nothing overlaps 
 
 ## Important notes
 
-- **Monetary values** are in cents (`amount_cents`). Example: R$ 150,00 = `15000`.
+- **Monetary values** are in cents (`amount_cents`). Example: R$ 150,00 = `15000`. The official MCP takes `amount` in reais (e.g. `150.00`) — don't mix the two.
 - **Dates** use the format `YYYY-MM-DD`.
-- **IDs** come from the Organizze API. When using this server alongside the official MCP, get transfer/account/card IDs from its list tools (e.g. `list_transferences`, `list_accounts`).
+- **IDs** come from the Organizze API. When using this server alongside the official MCP, get transfer/account/card IDs from its list tools (e.g. `list_transferences`, `list_accounts`, `list_transactions`). Invoice IDs for `update_transaction_advanced` / `move_transactions` come from `find_credit_card_invoice`.
